@@ -314,17 +314,32 @@ kbd {
   font-size: 10px;
 }
 
-#modal-ok {
-  width: 100%;
+.modal-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-buttons button {
+  flex: 1;
   padding: 6px;
-  background: var(--accent-blue);
   border: none;
   border-radius: 5px;
-  color: #fff;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.1s;
 }
 
-#modal-ok:hover { opacity: 0.85; }
+#modal-no {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+#modal-no:hover { opacity: 0.8; }
+
+#modal-yes {
+  background: var(--accent1);
+  color: #fff;
+}
+
+#modal-yes:hover { opacity: 0.85; }

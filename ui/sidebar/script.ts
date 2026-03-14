@@ -396,10 +396,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Modal OK button
-  const modalOk = document.getElementById('modal-ok');
-  if (modalOk) {
-    modalOk.addEventListener('click', closeModal);
+  // Modal buttons
+  const modalNo = document.getElementById('modal-no');
+  if (modalNo) modalNo.addEventListener('click', closeModal);
+
+  const modalYes = document.getElementById('modal-yes');
+  if (modalYes) {
+    modalYes.addEventListener('click', () => {
+      if (selectedId1 && selectedId2) {
+        iina.postMessage('cut-segment', { id1: selectedId1, id2: selectedId2 });
+      }
+      closeModal();
+    });
   }
 
   iina.postMessage('request-update');

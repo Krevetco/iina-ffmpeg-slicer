@@ -124,6 +124,69 @@ function registerSidebarHandlers(): void {
     updateSidebar();
   });
 
+  sidebar.onMessage('cut-segment', (data: any) => {
+    (async () => {
+      const markers = getMarkers();
+      const ma = markers.find((m) => m.id === data.id1);
+      const mb = markers.find((m) => m.id === data.id2);
+      if (!ma || !mb) { log.warn('[VideoMarkers] cut-segment: markers not found'); return; }
+
+      // Ensure start < end regardless of which type was picked first
+      const startM = ma.time <= mb.time ? ma : mb;
+      const endM   = ma.time <= mb.time ? mb : ma;
+
+      const fileUrl = core.status.url;
+      if (!fileUrl || !fileUrl.startsWith('file://')) {
+        core.osd('Нет локального файла');
+        return;
+      }
+      const filePath = decodeURIComponent(fileUrl.replace(/^file:\/\//, ''));
+      const lastSlash = filePath.lastIndexOf('/');
+      const dir      = filePath.substring(0, lastSlash);
+      const basename = filePath.substring(lastSlash + 1);
+      const dotIdx   = basename.lastIndexOf('.');
+      const nameNoExt = dotIdx >= 0 ? basename.substring(0, dotIdx) : basename;
+      const ext       = dotIdx >= 0 ? basename.substring(dotIdx) : '';
+
+      // Build output filename: name_label1_label2_HH_MM_SS_HH_MM_SS.ext
+      const timeTag = (s: number) => formatTime(s).replace(/:/g, '_');
+      const sanitize = (s: string) => s.replace(/[\/\\:*?"<>|]/g, '').trim();
+      const parts: string[] = [nameNoExt];
+      if (startM.label) parts.push(sanitize(startM.label));
+      if (endM.label)   parts.push(sanitize(endM.label));
+      parts.push(timeTag(startM.time));
+      parts.push(timeTag(endM.time));
+      const outPath = `${dir}/${parts.join('_')}${ext}`;
+
+      const startFmt = formatTime(startM.time);
+      const endFmt   = formatTime(endM.time);
+
+      core.osd(`Вырезаю ${startFmt} → ${endFmt}…`);
+      log.log(`[VideoMarkers] ffmpeg: "${filePath}" → "${outPath}"`);
+
+      // Use bash so ffmpeg is found via login PATH (Homebrew /usr/local/bin etc.)
+      const cmd = [
+        'ffmpeg',
+        '-ss', startFmt,
+        '-to', endFmt,
+        '-i', filePath,
+        '-c', 'copy',
+        outPath,
+        '-y',
+      ].map((a) => `'${a.replace(/'/g, "'\\''")}'`).join(' ');
+
+      const { status, stderr } = await utils.exec('/bin/bash', ['-lc', cmd]);
+
+      if (status === 0) {
+        core.osd(`Готово: ${parts.join('_')}${ext}`);
+        utils.open(dir);
+      } else {
+        core.osd('ffmpeg ошибка — смотри консоль');
+        log.warn(`[VideoMarkers] ffmpeg stderr:\n${stderr}`);
+      }
+    })();
+  });
+
   sidebar.onMessage('export-markers', () => {
     const sorted = getMarkers().slice().sort((a, b) => a.time - b.time);
     if (sorted.length === 0) {

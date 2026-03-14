@@ -1,4 +1,25 @@
 (() => {
+  var __async = (__this, __arguments, generator) => {
+    return new Promise((resolve, reject) => {
+      var fulfilled = (value) => {
+        try {
+          step(generator.next(value));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      var rejected = (value) => {
+        try {
+          step(generator.throw(value));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      var step = (x) => x.done ? resolve(x.value) : Promise.resolve(x.value).then(fulfilled, rejected);
+      step((generator = generator.apply(__this, __arguments)).next());
+    });
+  };
+
   // src/index.ts
   var { console: log, core, event: iinaEvent, menu, sidebar, preferences, file, utils } = iina;
   var markersStore = {};
@@ -85,6 +106,65 @@
       log.log(`[VideoMarkers] rename-marker ${data.id} \u2192 "${marker.label}"`);
       saveMarkers();
       updateSidebar();
+    });
+    sidebar.onMessage("cut-segment", (data) => {
+      (() => __async(this, null, function* () {
+        const markers = getMarkers();
+        const ma = markers.find((m) => m.id === data.id1);
+        const mb = markers.find((m) => m.id === data.id2);
+        if (!ma || !mb) {
+          log.warn("[VideoMarkers] cut-segment: markers not found");
+          return;
+        }
+        const startM = ma.time <= mb.time ? ma : mb;
+        const endM = ma.time <= mb.time ? mb : ma;
+        const fileUrl = core.status.url;
+        if (!fileUrl || !fileUrl.startsWith("file://")) {
+          core.osd("\u041D\u0435\u0442 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u0444\u0430\u0439\u043B\u0430");
+          return;
+        }
+        const filePath = decodeURIComponent(fileUrl.replace(/^file:\/\//, ""));
+        const lastSlash = filePath.lastIndexOf("/");
+        const dir = filePath.substring(0, lastSlash);
+        const basename = filePath.substring(lastSlash + 1);
+        const dotIdx = basename.lastIndexOf(".");
+        const nameNoExt = dotIdx >= 0 ? basename.substring(0, dotIdx) : basename;
+        const ext = dotIdx >= 0 ? basename.substring(dotIdx) : "";
+        const timeTag = (s) => formatTime(s).replace(/:/g, "_");
+        const sanitize = (s) => s.replace(/[\/\\:*?"<>|]/g, "").trim();
+        const parts = [nameNoExt];
+        if (startM.label) parts.push(sanitize(startM.label));
+        if (endM.label) parts.push(sanitize(endM.label));
+        parts.push(timeTag(startM.time));
+        parts.push(timeTag(endM.time));
+        const outPath = `${dir}/${parts.join("_")}${ext}`;
+        const startFmt = formatTime(startM.time);
+        const endFmt = formatTime(endM.time);
+        core.osd(`\u0412\u044B\u0440\u0435\u0437\u0430\u044E ${startFmt} \u2192 ${endFmt}\u2026`);
+        log.log(`[VideoMarkers] ffmpeg: "${filePath}" \u2192 "${outPath}"`);
+        const cmd = [
+          "ffmpeg",
+          "-ss",
+          startFmt,
+          "-to",
+          endFmt,
+          "-i",
+          filePath,
+          "-c",
+          "copy",
+          outPath,
+          "-y"
+        ].map((a) => `'${a.replace(/'/g, "'\\''")}'`).join(" ");
+        const { status, stderr } = yield utils.exec("/bin/bash", ["-lc", cmd]);
+        if (status === 0) {
+          core.osd(`\u0413\u043E\u0442\u043E\u0432\u043E: ${parts.join("_")}${ext}`);
+          utils.open(dir);
+        } else {
+          core.osd("ffmpeg \u043E\u0448\u0438\u0431\u043A\u0430 \u2014 \u0441\u043C\u043E\u0442\u0440\u0438 \u043A\u043E\u043D\u0441\u043E\u043B\u044C");
+          log.warn(`[VideoMarkers] ffmpeg stderr:
+${stderr}`);
+        }
+      }))();
     });
     sidebar.onMessage("export-markers", () => {
       var _a, _b;
