@@ -4,10 +4,13 @@
   "version": "0.1.0",
   "entry": "main.js",
   "author": {
-    "name": "User"
+    "name": "Boris",
+    "email": "borya-hohlov@mail.ru"
   },
-  "description": "Add time markers with hotkeys 1 and 2",
+  "description": "Женя Доросинский лучший оператор",
   "minIINAVersion": "1.3.0",
+  "ghRepo": "Krevetco/iina-ffpeg-slicer",
+  "ghVersion": 1,
   "permissions": [
     "show-osd",
     "file-system"

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Markers</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <div class="info-panel">
+      <div class="video-name" id="video-name">No video loaded</div>
+      <div class="meta">
+        <span id="markers-count">0 markers</span>
+        <span id="current-time">00:00:00</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Timeline</div>
+      <div class="timeline-wrap">
+        <canvas id="timeline" height="52"></canvas>
+      </div>
+    </div>
+
+    <div id="back-btn" class="hidden">↩ Return to <span id="back-time">00:00:00</span></div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-label">Markers</div>
+        <button id="export-btn" class="export-btn" title="Export markers to file">⬆ Export</button>
+      </div>
+      <div id="columns">
+        <div class="col">
+          <div class="col-header badge-1">Type 1</div>
+          <div id="list-1"></div>
+        </div>
+        <div class="col">
+          <div class="col-header badge-2">Type 2</div>
+          <div id="list-2"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- In-WebView modal -->
+  <div id="modal-overlay" class="hidden">
+    <div class="modal">
+      <div class="modal-title">Вырезать сегмент между двумя маркерами?</div>
+      <div id="modal-body"></div>
+      <div class="modal-buttons">
+        <button id="modal-no">Нет</button>
+        <button id="modal-yes">Да</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

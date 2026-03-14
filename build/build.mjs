@@ -69,7 +69,14 @@ async function build() {
   fs.rmSync(IINA_PLUGINS, { recursive: true, force: true });
   fs.cpSync(DIST, IINA_PLUGINS, { recursive: true });
 
+  // 6. Copy to repo root for GitHub distribution
+  //    IINA installs from GitHub by downloading the repo ZIP and looking for *.iinaplugin
+  const ROOT_PLUGIN = path.join(ROOT, PLUGIN_NAME);
+  fs.rmSync(ROOT_PLUGIN, { recursive: true, force: true });
+  fs.cpSync(DIST, ROOT_PLUGIN, { recursive: true });
+
   console.log(`✅ Built and installed to:\n   ${IINA_PLUGINS}`);
+  console.log(`📦 GitHub-ready copy: ${ROOT_PLUGIN}`);
   console.log(`⚠️  Restart IINA to pick up changes\n`);
 }
 
