@@ -143,7 +143,7 @@ function registerSidebarHandlers(): void {
     }).join('\n\n');
 
     file.write(`@data/${filename}`, lines);
-    utils.openURL(`@data/${filename}`);
+    utils.open(`@data/${filename}`);
     core.osd(`Exported: ${filename}`);
     log.log(`[VideoMarkers] Exported ${sorted.length} markers → ${filename}`);
   });
