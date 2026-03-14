@@ -190,19 +190,28 @@ function showPairModal(): void {
   const m2 = state.markers.find((m) => m.id === selectedId2);
   if (!m1 || !m2) return;
 
+  const wrongOrder = m1.time > m2.time;
+
   const body = document.getElementById('modal-body');
   if (body) {
-    body.innerHTML = `
-      <div class="modal-marker">
-        <div class="modal-marker-time">Type 1 — ${fmt(m1.time)}</div>
-        ${m1.label ? `<div class="modal-marker-label">${m1.label}</div>` : ''}
-      </div>
-      <div class="modal-marker">
-        <div class="modal-marker-time">Type 2 — ${fmt(m2.time)}</div>
-        ${m2.label ? `<div class="modal-marker-label">${m2.label}</div>` : ''}
-      </div>
-    `;
+    if (wrongOrder) {
+      body.innerHTML = `<div class="modal-warning">Чтобы вырезать сегмент, второй маркер должен идти после первого</div>`;
+    } else {
+      body.innerHTML = `
+        <div class="modal-marker">
+          <div class="modal-marker-time">Type 1 — ${fmt(m1.time)}</div>
+          ${m1.label ? `<div class="modal-marker-label">${m1.label}</div>` : ''}
+        </div>
+        <div class="modal-marker">
+          <div class="modal-marker-time">Type 2 — ${fmt(m2.time)}</div>
+          ${m2.label ? `<div class="modal-marker-label">${m2.label}</div>` : ''}
+        </div>
+      `;
+    }
   }
+
+  const yesBtn = document.getElementById('modal-yes') as HTMLButtonElement | null;
+  if (yesBtn) yesBtn.style.display = wrongOrder ? 'none' : '';
 
   const overlay = document.getElementById('modal-overlay');
   if (overlay) overlay.classList.remove('hidden');

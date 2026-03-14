@@ -195,7 +195,7 @@ function registerSidebarHandlers(): void {
     }
     const videoName = (core.window as any).title ?? core.status.title ?? 'markers';
     const date = new Date().toISOString().slice(0, 10);
-    const safeName = videoName.replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 60);
+    const safeName = videoName.replace(/[\/\\:*?"<>|]/g, '_').trim().substring(0, 60);
     const filename = `${safeName}_${date}.txt`;
 
     const lines = sorted.map((m) => {

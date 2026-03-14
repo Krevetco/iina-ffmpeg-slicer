@@ -175,7 +175,7 @@ ${stderr}`);
       }
       const videoName = (_b = (_a = core.window.title) != null ? _a : core.status.title) != null ? _b : "markers";
       const date = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-      const safeName = videoName.replace(/[^a-zA-Z0-9_\-]/g, "_").substring(0, 60);
+      const safeName = videoName.replace(/[\/\\:*?"<>|]/g, "_").trim().substring(0, 60);
       const filename = `${safeName}_${date}.txt`;
       const lines = sorted.map((m) => {
         const parts = [formatTime(m.time)];

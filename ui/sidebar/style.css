@@ -343,3 +343,10 @@ kbd {
 }
 
 #modal-yes:hover { opacity: 0.85; }
+
+.modal-warning {
+  color: var(--accent2);
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 0;
+}

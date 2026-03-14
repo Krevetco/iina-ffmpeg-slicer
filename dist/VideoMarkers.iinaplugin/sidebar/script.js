@@ -122,19 +122,26 @@
     const m1 = state.markers.find((m) => m.id === selectedId1);
     const m2 = state.markers.find((m) => m.id === selectedId2);
     if (!m1 || !m2) return;
+    const wrongOrder = m1.time > m2.time;
     const body = document.getElementById("modal-body");
     if (body) {
-      body.innerHTML = `
-      <div class="modal-marker">
-        <div class="modal-marker-time">Type 1 \u2014 ${fmt(m1.time)}</div>
-        ${m1.label ? `<div class="modal-marker-label">${m1.label}</div>` : ""}
-      </div>
-      <div class="modal-marker">
-        <div class="modal-marker-time">Type 2 \u2014 ${fmt(m2.time)}</div>
-        ${m2.label ? `<div class="modal-marker-label">${m2.label}</div>` : ""}
-      </div>
-    `;
+      if (wrongOrder) {
+        body.innerHTML = `<div class="modal-warning">\u0427\u0442\u043E\u0431\u044B \u0432\u044B\u0440\u0435\u0437\u0430\u0442\u044C \u0441\u0435\u0433\u043C\u0435\u043D\u0442, \u0432\u0442\u043E\u0440\u043E\u0439 \u043C\u0430\u0440\u043A\u0435\u0440 \u0434\u043E\u043B\u0436\u0435\u043D \u0438\u0434\u0442\u0438 \u043F\u043E\u0441\u043B\u0435 \u043F\u0435\u0440\u0432\u043E\u0433\u043E</div>`;
+      } else {
+        body.innerHTML = `
+        <div class="modal-marker">
+          <div class="modal-marker-time">Type 1 \u2014 ${fmt(m1.time)}</div>
+          ${m1.label ? `<div class="modal-marker-label">${m1.label}</div>` : ""}
+        </div>
+        <div class="modal-marker">
+          <div class="modal-marker-time">Type 2 \u2014 ${fmt(m2.time)}</div>
+          ${m2.label ? `<div class="modal-marker-label">${m2.label}</div>` : ""}
+        </div>
+      `;
+      }
     }
+    const yesBtn = document.getElementById("modal-yes");
+    if (yesBtn) yesBtn.style.display = wrongOrder ? "none" : "";
     const overlay = document.getElementById("modal-overlay");
     if (overlay) overlay.classList.remove("hidden");
   }
