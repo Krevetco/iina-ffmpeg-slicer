@@ -1,0 +1,21 @@
+{
+  "name": "videomarkers",
+  "version": "0.1.0",
+  "description": "IINA plugin for adding time markers with hotkeys",
+  "type": "module",
+  "scripts": {
+    "build": "node build/build.mjs",
+    "dev": "node build/build.mjs --watch",
+    "package": "npm run build && cd dist && zip -r ../VideoMarkers.iinaplgz VideoMarkers.iinaplugin/",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "chokidar": "^3.6.0",
+    "esbuild": "^0.24.0",
+    "iina-plugin-definition": "^0.99.3",
+    "typescript": "^5.0.0"
+  }
+}

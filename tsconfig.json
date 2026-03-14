@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ES2015",
+    "lib": ["ES2020", "DOM"],
+    "moduleResolution": "node",
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "types": ["iina-plugin-definition"]
+  },
+  "include": ["src/**/*", "ui/**/*"],
+  "exclude": ["node_modules", "dist", "build"]
+}

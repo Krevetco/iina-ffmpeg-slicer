@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Markers</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <div class="info-panel">
+      <div class="video-name" id="video-name">No video loaded</div>
+      <div class="meta">
+        <span id="markers-count">0 markers</span>
+        <span id="current-time">00:00:00</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Timeline</div>
+      <div class="timeline-wrap">
+        <canvas id="timeline" height="52"></canvas>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Markers</div>
+      <div id="markers-list">
+        <div class="hint">Press <kbd>1</kbd> or <kbd>2</kbd> to add markers</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

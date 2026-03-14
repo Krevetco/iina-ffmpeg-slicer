@@ -1,0 +1,17 @@
+{
+  "name": "VideoMarkers",
+  "identifier": "com.iina.videomarkers",
+  "version": "0.1.0",
+  "entry": "main.js",
+  "author": {
+    "name": "User"
+  },
+  "description": "Add time markers with hotkeys 1 and 2",
+  "minIINAVersion": "1.3.0",
+  "permissions": [
+    "show-osd"
+  ],
+  "sidebarTab": {
+    "name": "Markers"
+  }
+}
