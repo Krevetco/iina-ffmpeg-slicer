@@ -8,6 +8,7 @@
 </head>
 <body>
   <div id="app">
+
     <div class="info-panel">
       <div class="video-name" id="video-name">No video loaded</div>
       <div class="meta">
@@ -25,12 +26,19 @@
 
     <div class="section">
       <div class="section-label">Markers</div>
-      <div id="markers-list">
-        <div class="hint">Press <kbd>1</kbd> or <kbd>2</kbd> to add markers</div>
+      <div id="columns">
+        <div class="col">
+          <div class="col-header badge-1">Type 1</div>
+          <div id="list-1"></div>
+        </div>
+        <div class="col">
+          <div class="col-header badge-2">Type 2</div>
+          <div id="list-2"></div>
+        </div>
       </div>
     </div>
-  </div>
 
+  </div>
   <script src="script.js"></script>
 </body>
 </html>

@@ -3,6 +3,9 @@
   var { console: log, core, event: iinaEvent, menu, sidebar, preferences } = iina;
   var markersStore = {};
   var currentVideoId = null;
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
   function getVideoId() {
     var _a, _b, _c;
     const title = (_b = (_a = core.window.title) != null ? _a : core.status.title) != null ? _b : "unknown";
@@ -32,7 +35,17 @@
   function loadMarkers() {
     if (!currentVideoId) return;
     const raw = preferences.get(`markers_${currentVideoId}`);
-    markersStore[currentVideoId] = raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    markersStore[currentVideoId] = parsed.map((m) => {
+      var _a, _b;
+      return {
+        id: (_a = m.id) != null ? _a : uid(),
+        time: m.time,
+        type: m.type,
+        label: (_b = m.label) != null ? _b : "",
+        createdAt: m.createdAt
+      };
+    });
     log.log(`[VideoMarkers] Loaded ${getMarkers().length} markers`);
   }
   function updateSidebar() {
@@ -46,14 +59,34 @@
     log.log(`[VideoMarkers] postMessage update \u2192 ${payload.markers.length} markers`);
     sidebar.postMessage("update", payload);
   }
-  sidebar.onMessage("seek", (data) => {
-    log.log(`[VideoMarkers] seek \u2192 ${data.time}`);
-    core.seekTo(data.time);
-  });
-  sidebar.onMessage("request-update", () => {
-    log.log("[VideoMarkers] request-update received");
-    updateSidebar();
-  });
+  function registerSidebarHandlers() {
+    sidebar.onMessage("seek", (data) => {
+      log.log(`[VideoMarkers] seek \u2192 ${data.time}`);
+      core.seekTo(data.time);
+    });
+    sidebar.onMessage("request-update", () => {
+      log.log("[VideoMarkers] request-update");
+      updateSidebar();
+    });
+    sidebar.onMessage("delete-marker", (data) => {
+      if (!currentVideoId) return;
+      const before = getMarkers().length;
+      markersStore[currentVideoId] = getMarkers().filter((m) => m.id !== data.id);
+      log.log(`[VideoMarkers] delete-marker ${data.id} (${before} \u2192 ${getMarkers().length})`);
+      saveMarkers();
+      updateSidebar();
+    });
+    sidebar.onMessage("rename-marker", (data) => {
+      var _a;
+      if (!currentVideoId) return;
+      const marker = getMarkers().find((m) => m.id === data.id);
+      if (!marker) return;
+      marker.label = (_a = data.label) != null ? _a : "";
+      log.log(`[VideoMarkers] rename-marker ${data.id} \u2192 "${marker.label}"`);
+      saveMarkers();
+      updateSidebar();
+    });
+  }
   function addMarker(type) {
     const position = core.status.position;
     if (position == null) {
@@ -64,7 +97,13 @@
       log.warn("[VideoMarkers] addMarker: no video loaded");
       return;
     }
-    const marker = { time: position, type, createdAt: (/* @__PURE__ */ new Date()).toISOString() };
+    const marker = {
+      id: uid(),
+      time: position,
+      type,
+      label: "",
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
     getMarkers().push(marker);
     saveMarkers();
     core.osd(`Type ${type} marker \u2014 ${formatTime(position)}`);
@@ -72,8 +111,9 @@
     updateSidebar();
   }
   iinaEvent.on("iina.window-loaded", () => {
-    log.log("[VideoMarkers] iina.window-loaded \u2192 loadFile sidebar");
+    log.log("[VideoMarkers] iina.window-loaded \u2192 loadFile then register handlers");
     sidebar.loadFile("sidebar/index.html");
+    registerSidebarHandlers();
   });
   iinaEvent.on("iina.file-loaded", () => {
     currentVideoId = getVideoId();
@@ -81,6 +121,12 @@
     loadMarkers();
     setTimeout(() => updateSidebar(), 300);
   });
+  setInterval(() => {
+    var _a;
+    if (!currentVideoId) return;
+    if (core.status.paused) return;
+    sidebar.postMessage("tick", { currentTime: (_a = core.status.position) != null ? _a : 0 });
+  }, 1e3);
   menu.addItem(menu.item("Add Type 1 Marker", () => addMarker(1), { keyBinding: "1" }));
   menu.addItem(menu.item("Add Type 2 Marker", () => addMarker(2), { keyBinding: "2" }));
   log.log("[VideoMarkers] Plugin initialised \u2713");

@@ -6,8 +6,10 @@ const { console: log, core, event: iinaEvent, menu, sidebar, preferences } = iin
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface Marker {
+  id: string;
   time: number;
   type: 1 | 2;
+  label: string;
   createdAt: string;
 }
 
@@ -24,6 +26,10 @@ const markersStore: Record<string, Marker[]> = {};
 let currentVideoId: string | null = null;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+function uid(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
 
 function getVideoId(): string {
   const title = (core.window as any).title ?? core.status.title ?? 'unknown';
@@ -63,7 +69,14 @@ function saveMarkers(): void {
 function loadMarkers(): void {
   if (!currentVideoId) return;
   const raw = preferences.get(`markers_${currentVideoId}`);
-  markersStore[currentVideoId] = raw ? (JSON.parse(raw) as Marker[]) : [];
+  const parsed: Marker[] = raw ? (JSON.parse(raw) as Marker[]) : [];
+  markersStore[currentVideoId] = parsed.map((m) => ({
+    id: m.id ?? uid(),
+    time: m.time,
+    type: m.type,
+    label: m.label ?? '',
+    createdAt: m.createdAt,
+  }));
   log.log(`[VideoMarkers] Loaded ${getMarkers().length} markers`);
 }
 
@@ -80,16 +93,39 @@ function updateSidebar(): void {
   sidebar.postMessage('update', payload);
 }
 
-// Messages coming FROM the sidebar WebView
-sidebar.onMessage('seek', (data: any) => {
-  log.log(`[VideoMarkers] seek → ${data.time}`);
-  core.seekTo(data.time as number);
-});
+// NOTE: sidebar.onMessage MUST be registered AFTER sidebar.loadFile().
+// loadFile() clears all message listeners (per IINA plugin behaviour).
+// All sidebar.onMessage calls are therefore inside the window-loaded handler.
+function registerSidebarHandlers(): void {
+  sidebar.onMessage('seek', (data: any) => {
+    log.log(`[VideoMarkers] seek → ${data.time}`);
+    core.seekTo(data.time as number);
+  });
 
-sidebar.onMessage('request-update', () => {
-  log.log('[VideoMarkers] request-update received');
-  updateSidebar();
-});
+  sidebar.onMessage('request-update', () => {
+    log.log('[VideoMarkers] request-update');
+    updateSidebar();
+  });
+
+  sidebar.onMessage('delete-marker', (data: any) => {
+    if (!currentVideoId) return;
+    const before = getMarkers().length;
+    markersStore[currentVideoId] = getMarkers().filter((m) => m.id !== data.id);
+    log.log(`[VideoMarkers] delete-marker ${data.id} (${before} → ${getMarkers().length})`);
+    saveMarkers();
+    updateSidebar();
+  });
+
+  sidebar.onMessage('rename-marker', (data: any) => {
+    if (!currentVideoId) return;
+    const marker = getMarkers().find((m) => m.id === data.id);
+    if (!marker) return;
+    marker.label = data.label ?? '';
+    log.log(`[VideoMarkers] rename-marker ${data.id} → "${marker.label}"`);
+    saveMarkers();
+    updateSidebar();
+  });
+}
 
 // ── Core action ────────────────────────────────────────────────────────────
 
@@ -103,7 +139,13 @@ function addMarker(type: 1 | 2): void {
     log.warn('[VideoMarkers] addMarker: no video loaded');
     return;
   }
-  const marker: Marker = { time: position, type, createdAt: new Date().toISOString() };
+  const marker: Marker = {
+    id: uid(),
+    time: position,
+    type,
+    label: '',
+    createdAt: new Date().toISOString(),
+  };
   getMarkers().push(marker);
   saveMarkers();
   core.osd(`Type ${type} marker — ${formatTime(position)}`);
@@ -114,8 +156,11 @@ function addMarker(type: 1 | 2): void {
 // ── Events ─────────────────────────────────────────────────────────────────
 
 iinaEvent.on('iina.window-loaded', () => {
-  log.log('[VideoMarkers] iina.window-loaded → loadFile sidebar');
+  log.log('[VideoMarkers] iina.window-loaded → loadFile then register handlers');
+  // loadFile must come first; it clears existing listeners
   sidebar.loadFile('sidebar/index.html');
+  // Register handlers after loadFile
+  registerSidebarHandlers();
 });
 
 iinaEvent.on('iina.file-loaded', () => {
@@ -124,6 +169,13 @@ iinaEvent.on('iina.file-loaded', () => {
   loadMarkers();
   setTimeout(() => updateSidebar(), 300);
 });
+
+// Periodically push current position to sidebar while video is playing
+setInterval(() => {
+  if (!currentVideoId) return;
+  if (core.status.paused) return;
+  sidebar.postMessage('tick', { currentTime: core.status.position ?? 0 });
+}, 1000);
 
 // ── Menu / hotkeys ─────────────────────────────────────────────────────────
 
