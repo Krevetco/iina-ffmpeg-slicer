@@ -1,7 +1,6 @@
 // VideoMarkers – IINA Plugin entry point
-// `iina` is declared as a global by iina-plugin-definition
 
-const { console: log, core, event: iinaEvent, menu, sidebar, preferences } = iina;
+const { console: log, core, event: iinaEvent, menu, sidebar, preferences, file, utils } = iina;
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -95,7 +94,6 @@ function updateSidebar(): void {
 
 // NOTE: sidebar.onMessage MUST be registered AFTER sidebar.loadFile().
 // loadFile() clears all message listeners (per IINA plugin behaviour).
-// All sidebar.onMessage calls are therefore inside the window-loaded handler.
 function registerSidebarHandlers(): void {
   sidebar.onMessage('seek', (data: any) => {
     log.log(`[VideoMarkers] seek → ${data.time}`);
@@ -124,6 +122,30 @@ function registerSidebarHandlers(): void {
     log.log(`[VideoMarkers] rename-marker ${data.id} → "${marker.label}"`);
     saveMarkers();
     updateSidebar();
+  });
+
+  sidebar.onMessage('export-markers', () => {
+    const sorted = getMarkers().slice().sort((a, b) => a.time - b.time);
+    if (sorted.length === 0) {
+      core.osd('No markers to export');
+      return;
+    }
+    const videoName = (core.window as any).title ?? core.status.title ?? 'markers';
+    const date = new Date().toISOString().slice(0, 10);
+    const safeName = videoName.replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 60);
+    const filename = `${safeName}_${date}.txt`;
+
+    const lines = sorted.map((m) => {
+      const parts: string[] = [formatTime(m.time)];
+      if (m.label) parts.push(m.label);
+      parts.push(`Type ${m.type}`);
+      return parts.join('\n');
+    }).join('\n\n');
+
+    file.write(`@data/${filename}`, lines);
+    utils.openURL(`@data/${filename}`);
+    core.osd(`Exported: ${filename}`);
+    log.log(`[VideoMarkers] Exported ${sorted.length} markers → ${filename}`);
   });
 }
 
@@ -157,9 +179,7 @@ function addMarker(type: 1 | 2): void {
 
 iinaEvent.on('iina.window-loaded', () => {
   log.log('[VideoMarkers] iina.window-loaded → loadFile then register handlers');
-  // loadFile must come first; it clears existing listeners
   sidebar.loadFile('sidebar/index.html');
-  // Register handlers after loadFile
   registerSidebarHandlers();
 });
 
@@ -170,12 +190,12 @@ iinaEvent.on('iina.file-loaded', () => {
   setTimeout(() => updateSidebar(), 300);
 });
 
-// Periodically push current position to sidebar while video is playing
+// Push current position to sidebar every 500ms (always, regardless of pause state).
+// This ensures the playhead updates when user seeks via player controls.
 setInterval(() => {
   if (!currentVideoId) return;
-  if (core.status.paused) return;
   sidebar.postMessage('tick', { currentTime: core.status.position ?? 0 });
-}, 1000);
+}, 500);
 
 // ── Menu / hotkeys ─────────────────────────────────────────────────────────
 

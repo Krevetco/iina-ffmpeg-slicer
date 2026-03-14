@@ -24,8 +24,13 @@
       </div>
     </div>
 
+    <div id="back-btn" class="hidden">↩ Return to <span id="back-time">00:00:00</span></div>
+
     <div class="section">
-      <div class="section-label">Markers</div>
+      <div class="section-header">
+        <div class="section-label">Markers</div>
+        <button id="export-btn" class="export-btn" title="Export markers to file">⬆ Export</button>
+      </div>
       <div id="columns">
         <div class="col">
           <div class="col-header badge-1">Type 1</div>
@@ -39,6 +44,16 @@
     </div>
 
   </div>
+
+  <!-- In-WebView modal -->
+  <div id="modal-overlay" class="hidden">
+    <div class="modal">
+      <div class="modal-title">Marker Pair Selected</div>
+      <div id="modal-body"></div>
+      <button id="modal-ok">OK</button>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>

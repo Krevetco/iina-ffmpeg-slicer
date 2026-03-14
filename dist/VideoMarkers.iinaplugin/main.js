@@ -1,6 +1,6 @@
 (() => {
   // src/index.ts
-  var { console: log, core, event: iinaEvent, menu, sidebar, preferences } = iina;
+  var { console: log, core, event: iinaEvent, menu, sidebar, preferences, file, utils } = iina;
   var markersStore = {};
   var currentVideoId = null;
   function uid() {
@@ -86,6 +86,28 @@
       saveMarkers();
       updateSidebar();
     });
+    sidebar.onMessage("export-markers", () => {
+      var _a, _b;
+      const sorted = getMarkers().slice().sort((a, b) => a.time - b.time);
+      if (sorted.length === 0) {
+        core.osd("No markers to export");
+        return;
+      }
+      const videoName = (_b = (_a = core.window.title) != null ? _a : core.status.title) != null ? _b : "markers";
+      const date = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+      const safeName = videoName.replace(/[^a-zA-Z0-9_\-]/g, "_").substring(0, 60);
+      const filename = `${safeName}_${date}.txt`;
+      const lines = sorted.map((m) => {
+        const parts = [formatTime(m.time)];
+        if (m.label) parts.push(m.label);
+        parts.push(`Type ${m.type}`);
+        return parts.join("\n");
+      }).join("\n\n");
+      file.write(`@data/${filename}`, lines);
+      utils.openURL(`@data/${filename}`);
+      core.osd(`Exported: ${filename}`);
+      log.log(`[VideoMarkers] Exported ${sorted.length} markers \u2192 ${filename}`);
+    });
   }
   function addMarker(type) {
     const position = core.status.position;
@@ -124,9 +146,8 @@
   setInterval(() => {
     var _a;
     if (!currentVideoId) return;
-    if (core.status.paused) return;
     sidebar.postMessage("tick", { currentTime: (_a = core.status.position) != null ? _a : 0 });
-  }, 1e3);
+  }, 500);
   menu.addItem(menu.item("Add Type 1 Marker", () => addMarker(1), { keyBinding: "1" }));
   menu.addItem(menu.item("Add Type 2 Marker", () => addMarker(2), { keyBinding: "2" }));
   log.log("[VideoMarkers] Plugin initialised \u2713");
