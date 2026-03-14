@@ -69,14 +69,15 @@ async function build() {
   fs.rmSync(IINA_PLUGINS, { recursive: true, force: true });
   fs.cpSync(DIST, IINA_PLUGINS, { recursive: true });
 
-  // 6. Copy to repo root for GitHub distribution
-  //    IINA installs from GitHub by downloading the repo ZIP and looking for *.iinaplugin
-  const ROOT_PLUGIN = path.join(ROOT, PLUGIN_NAME);
-  fs.rmSync(ROOT_PLUGIN, { recursive: true, force: true });
-  fs.cpSync(DIST, ROOT_PLUGIN, { recursive: true });
+  // 6. Copy main.js + sidebar/ to repo root for GitHub distribution
+  //    IINA downloads the repo ZIP and uses *repo root* as the plugin directory
+  //    (mv tempDecompressDir/*/* tempFolder/ – double glob strips the repo-name wrapper folder)
+  fs.copyFileSync(path.join(DIST, 'main.js'), path.join(ROOT, 'main.js'));
+  fs.rmSync(path.join(ROOT, 'sidebar'), { recursive: true, force: true });
+  fs.cpSync(path.join(DIST, 'sidebar'), path.join(ROOT, 'sidebar'), { recursive: true });
 
   console.log(`✅ Built and installed to:\n   ${IINA_PLUGINS}`);
-  console.log(`📦 GitHub-ready copy: ${ROOT_PLUGIN}`);
+  console.log(`📦 GitHub-ready: main.js + sidebar/ copied to repo root`);
   console.log(`⚠️  Restart IINA to pick up changes\n`);
 }
 

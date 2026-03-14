@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node build/build.mjs",
     "dev": "node build/build.mjs --watch",
-    "package": "npm run build && cd dist && zip -r ../VideoMarkers.iinaplgz VideoMarkers.iinaplugin/",
+    "package": "npm run build && cd dist/VideoMarkers.iinaplugin && zip -r ../../VideoMarkers.iinaplgz *",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
